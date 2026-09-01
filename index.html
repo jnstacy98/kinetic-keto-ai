@@ -710,12 +710,15 @@
         const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         
         try {
-            const firebaseConfig = JSON.parse(rawConfig);
-            if (firebaseConfig.apiKey) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-            }
+            const firebaseConfig = {
+    apiKey: "AIzaSyDmDLjHt4lnhbaSnCW8ZppAFoPTGfq0wxg",
+    authDomain: "kineticketo.firebaseapp.com",
+    projectId: "kineticketo",
+    storageBucket: "kineticketo.firebasestorage.app",
+    messagingSenderId: "1072229920517",
+    appId: "1:1072229920517:web:8b1681b419a08b9776916c",
+    measurementId: "G-NG2DQRP79B"
+  };
         } catch (e) {
             console.warn("Running in local mode. Cloud sync disabled.");
         }
