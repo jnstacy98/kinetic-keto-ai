@@ -703,27 +703,32 @@
     <!-- FIREBASE & APP LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, setPersistence, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let app = null, auth = null, db = null;
-        const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         
+        const firebaseConfig = {
+            apiKey: "AIzaSyDmDLjHt4lnhbaSnCW8ZpPpAFoPTGfq0wxg",
+            authDomain: "kineticketo.firebaseapp.com",
+            projectId: "kineticketo",
+            storageBucket: "kineticketo.appspot.com",
+            messagingSenderId: "1072229920517",
+            appId: "1:1072229920517:web:8b1681b419a08b9776916c",
+            measurementId: "G-NG2DQP79B"
+        };
+
         try {
-            const firebaseConfig = {
-    apiKey: "AIzaSyDmDLjHt4lnhbaSnCW8ZppAFoPTGfq0wxg",
-    authDomain: "kineticketo.firebaseapp.com",
-    projectId: "kineticketo",
-    storageBucket: "kineticketo.firebasestorage.app",
-    messagingSenderId: "1072229920517",
-    appId: "1:1072229920517:web:8b1681b419a08b9776916c",
-    measurementId: "G-NG2DQRP79B"
-  };
+            if (firebaseConfig.apiKey) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
         } catch (e) {
-            console.warn("Running in local mode. Cloud sync disabled.");
+            console.warn("Firebase initialization error:", e);
         }
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kinetic-keto-app';
+        const appId = 'kinetic-keto-app';
 
         let countdownTimer = null;
         let timeLeft = 90;
@@ -751,11 +756,8 @@
             
             if (auth) {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    await setPersistence(auth, browserLocalPersistence);
+                    await signInAnonymously(auth);
                 } catch (e) {
                     console.error("Auth error:", e);
                 }
@@ -845,6 +847,19 @@
             const styleSheet = document.createElement("style");
             styleSheet.innerText = `@keyframes scanMotion { 0% { top: 0%; } 100% { top: 95%; } }`;
             document.head.appendChild(styleSheet);
+
+            // Actively check Firestore in case auth data is still syncing
+            if (db && auth && auth.currentUser) {
+                try {
+                    const profileRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile', 'data');
+                    const profileSnap = await getDoc(profileRef);
+                    if (profileSnap.exists()) {
+                        userProfile = profileSnap.data();
+                    }
+                } catch(err) {
+                    console.error("Scan lookup error:", err);
+                }
+            }
 
             setTimeout(async () => {
                 status.innerText = "Match Verified: Welcome Back!";
@@ -1688,7 +1703,6 @@
             const listEl = document.getElementById('exercise-list');
             listEl.innerHTML = '';
 
-            // Check if the currently selected calendar date is a scheduled Rest Day
             const todayType = scheduledWorkouts[selectedCalendarDate] || "Full Body Power";
             
             if (todayType.includes("Rest")) {
@@ -1716,7 +1730,6 @@
 
             let routineItems = [];
             
-            // Map split type to relevant exercise categories
             let targetCategories = ["Chest", "Back", "Legs", "Shoulders", "Arms", "Core"];
             if (todayType.includes("Chest")) targetCategories = ["Chest", "Arms"];
             else if (todayType.includes("Back")) targetCategories = ["Back", "Arms"];
@@ -1838,7 +1851,7 @@
                 container.appendChild(p);
             });
 
-            document.getElementById('anatomy-modal').classList.remove('hidden');
+            document.getElementById('anatomy-modal').classList.add('hidden');
         }
 
         window.closeAnatomyModal = function() {
@@ -2098,4 +2111,3 @@
     </script>
 </body>
 </html>
-```eof
