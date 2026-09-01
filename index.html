@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KineticKeto AI - Muscle & Nutrition Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981',
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen font-sans selection:bg-emerald-500 selection:text-white">
+
+    <!-- App Container -->
+    <div id="app" class="w-full max-w-md mx-auto min-h-screen flex flex-col bg-cardbg shadow-2xl relative border-x border-slate-800 z-10">
+        
+        <!-- HEADER -->
+        <header class="p-4 bg-slate-900/80 backdrop-blur border-b border-slate-800 flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-bolt-lightning text-white text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight tracking-tight">KineticKeto</h1>
+                    <p class="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">Science & Nutrition</p>
+                </div>
+            </div>
+            <div id="user-badge" class="hidden flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 cursor-pointer hover:border-emerald-500 transition" onclick="openProfileModal()" title="Edit Profile & Stats">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span id="nav-username" class="text-xs font-medium text-slate-300">Athlete</span>
+                <button onclick="logout()" class="text-xs text-slate-400 hover:text-red-400 ml-1"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 pb-24 overflow-y-auto">
+
+            <!-- 1. FACE DETECTION LOGIN SCREEN -->
+            <section id="view-login" class="p-6 flex flex-col items-center justify-center min-h-[75vh] text-center">
+                <div class="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-6 text-emerald-400 text-3xl shadow-xl shadow-emerald-500/5">
+                    <i class="fa-solid fa-face-viewfinder animate-pulse"></i>
+                </div>
+                <h2 class="text-2xl font-bold tracking-tight mb-2">Facial Recognition Login</h2>
+                <p class="text-sm text-slate-400 mb-8 max-w-xs">Secure biometric check-in to load your cloud profile & smart training calendar.</p>
+                
+                <div id="scanner-box" class="w-64 h-64 rounded-2xl bg-slate-900 border-2 border-dashed border-slate-700 relative overflow-hidden flex items-center justify-center mb-6">
+                    <div class="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex items-center justify-center">
+                        <i class="fa-solid fa-user-gear text-6xl text-slate-700"></i>
+                    </div>
+                    <div id="scan-laser" class="absolute inset-x-0 h-1 bg-emerald-500 shadow-[0_0_15px_#10b981] top-0 hidden"></div>
+                    <div id="scanner-status" class="absolute bottom-3 bg-slate-950/80 px-4 py-1.5 rounded-full text-xs font-medium text-slate-300 border border-slate-800">
+                        Camera Ready
+                    </div>
+                </div>
+
+                <button onclick="startFaceScan()" id="scan-btn" class="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Scan Face & Login</span>
+                </button>
+            </section>
+
+            <!-- 2. PROFILE SETUP & STARTING WEIGHT WIZARD (Onboarding) -->
+            <section id="view-onboard" class="p-5 hidden">
+                <div class="mb-5">
+                    <h2 class="text-xl font-bold">Configure Your Training Profile</h2>
+                    <p class="text-xs text-slate-400">Set your physical stats and evaluation preference.</p>
+                </div>
+
+                <form id="onboard-form" onsubmit="saveProfile(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Your Name</label>
+                        <input type="text" id="p-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500" placeholder="Alex Morgan">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Age</label>
+                            <input type="number" id="p-age" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500" placeholder="28">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Sex</label>
+                            <select id="p-sex" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-medium text-slate-300">Height</label>
+                                <select id="p-height-unit" onchange="toggleHeightUnit()" class="bg-slate-800 text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none">
+                                    <option value="in" selected>in</option>
+                                    <option value="cm">cm</option>
+                                </select>
+                            </div>
+                            <input type="number" id="p-height" value="70" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-medium text-slate-300">Weight</label>
+                                <select id="p-weight-unit" onchange="toggleWeightUnit()" class="bg-slate-800 text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none">
+                                    <option value="lbs" selected>lbs</option>
+                                    <option value="kg">kg</option>
+                                </select>
+                            </div>
+                            <input type="number" id="p-weight" value="165" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- STARTING WEIGHT EVALUATION SELECTOR -->
+                    <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+                        <label class="block text-xs font-medium text-slate-300">Starting Weight Setup Mode</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label onclick="setEvalMode('known')" class="flex items-center justify-center space-x-1.5 p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-400 text-xs font-semibold cursor-pointer text-center" id="mode-known-lbl">
+                                <input type="radio" name="eval_mode" value="known" checked class="hidden">
+                                <span>I Know My Weights</span>
+                            </label>
+                            <label onclick="setEvalMode('evaluate')" class="flex items-center justify-center space-x-1.5 p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-xs font-medium cursor-pointer text-center" id="mode-eval-lbl">
+                                <input type="radio" name="eval_mode" value="evaluate" class="hidden">
+                                <span>Auto-Evaluate (RPE Test)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- VISUAL BODY MODEL SELECTOR FOR FOCUS AREAS -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5 flex justify-between">
+                            <span>Visual Focus Areas (Select Priority)</span>
+                            <span class="text-[10px] text-emerald-400 font-normal">Full-Body + Targeted Growth</span>
+                        </label>
+                        <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 grid grid-cols-3 gap-2 text-center" id="muscle-selector">
+                            <div onclick="toggleMuscleFocus('Chest')" id="focus-Chest" class="muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-child-reaching text-emerald-400 text-sm"></i>
+                                <span>Chest</span>
+                            </div>
+                            <div onclick="toggleMuscleFocus('Back')" id="focus-Back" class="muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-arrows-split-up-and-left text-emerald-400 text-sm"></i>
+                                <span>Back</span>
+                            </div>
+                            <div onclick="toggleMuscleFocus('Legs')" id="focus-Legs" class="muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-person-walking text-emerald-400 text-sm"></i>
+                                <span>Legs</span>
+                            </div>
+                            <div onclick="toggleMuscleFocus('Shoulders')" id="focus-Shoulders" class="muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-arrows-up-down text-emerald-400 text-sm"></i>
+                                <span>Shoulders</span>
+                            </div>
+                            <div onclick="toggleMuscleFocus('Arms')" id="focus-Arms" class="muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-hand-fist text-emerald-400 text-sm"></i>
+                                <span>Arms</span>
+                            </div>
+                            <div onclick="toggleMuscleFocus('Core')" id="focus-Core" class="muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-shield-halved text-emerald-400 text-sm"></i>
+                                <span>Core</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AVAILABLE EQUIPMENT -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-2">Available Equipment</label>
+                        <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" name="eq" value="Barbell" checked class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500">
+                                <span>Barbell & Plates</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" name="eq" value="Dumbbells" checked class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500">
+                                <span>Dumbbells</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" name="eq" value="Pull-up Bar" class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500">
+                                <span>Pull-up Bar</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" name="eq" value="Resistance Bands" checked class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500">
+                                <span>Resistance Bands</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" name="eq" value="Bench" checked class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500">
+                                <span>Adjustable Bench</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" name="eq" value="Cables" class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500">
+                                <span>Cable Machine</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-emerald-600/25 mt-2">
+                        Save to Cloud & Generate Plan
+                    </button>
+                </form>
+            </section>
+
+            <!-- 3. MAIN DASHBOARD / WORKOUT ROUTINE -->
+            <section id="view-dashboard" class="p-5 hidden space-y-4">
+                
+                <!-- WORKOUT DATE NAVIGATION HEADER -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between text-xs shadow-lg">
+                    <button onclick="shiftWorkoutDate(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 transition">
+                        <i class="fa-solid fa-chevron-left mr-1"></i> Prev Day
+                    </button>
+                    <div class="text-center">
+                        <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block" id="workout-day-tag">Today</span>
+                        <span id="workout-date-display" class="font-bold text-slate-200 text-sm">Mon, Sep 1, 2026</span>
+                    </div>
+                    <button onclick="shiftWorkoutDate(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 transition">
+                        Next Day <i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- Routine Card -->
+                <div class="bg-gradient-to-br from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3" id="routine-container">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span id="routine-tag" class="text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/20">Active Schedule</span>
+                            <h3 id="routine-title" class="font-bold text-base mt-1">Balanced Hypertrophy & Strength</h3>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="resetTodayWorkout()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-2 py-1.5 rounded-lg border border-slate-700 transition" title="Restart Workout">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button onclick="openFocusModal()" class="text-xs text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 transition flex items-center space-x-1">
+                                <i class="fa-solid fa-bullseye"></i>
+                                <span>Focus</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TIME FRAME / DURATION SELECTOR -->
+                    <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                        <div class="flex items-center space-x-2 text-slate-300">
+                            <i class="fa-solid fa-clock text-emerald-400"></i>
+                            <span>Available Time:</span>
+                        </div>
+                        <select id="workout-duration-select" onchange="changeWorkoutDuration(this.value)" class="bg-slate-900 text-emerald-400 font-bold px-3 py-1 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500 text-xs">
+                            <option value="20">20 Mins (Express)</option>
+                            <option value="45" selected>45 Mins (Balanced)</option>
+                            <option value="60">60+ Mins (Full Hypertrophy)</option>
+                        </select>
+                    </div>
+
+                    <div id="exercise-list" class="space-y-3 pt-1">
+                        <!-- Dynamically populated exercises or rest day view -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. SMART AI CALENDAR WITH MONTH NAVIGATION -->
+            <section id="view-calendar" class="p-5 hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold">Smart AI Calendar</h2>
+                        <p class="text-xs text-slate-400">Periodized schedule optimized for your focus areas & recovery.</p>
+                    </div>
+                    <button onclick="generateSmartCalendar()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold border border-emerald-500/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Auto-Schedule</span>
+                    </button>
+                </div>
+
+                <!-- Calendar Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
+                    <!-- Month Navigation Header -->
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-300 mb-1">
+                        <button onclick="changeMonth(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700 transition"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                        <span id="calendar-month-year" class="text-emerald-400 text-sm">September 2026</span>
+                        <button onclick="changeMonth(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700 transition">Next <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    
+                    <!-- Weekday Headers -->
+                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <!-- Days Grid -->
+                    <div class="grid grid-cols-7 gap-1.5" id="calendar-days-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Selected Date Schedule Editor Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span id="selected-date-label" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Select a Day Above</span>
+                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded" id="selected-date-badge">No Workout</span>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-slate-300">Scheduled Routine / Focus</label>
+                        <select id="schedule-workout-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="Chest & Triceps Hypertrophy">Chest & Triceps Hypertrophy</option>
+                            <option value="Back & Biceps Power">Back & Biceps Power</option>
+                            <option value="Leg Day & Core">Leg Day & Core</option>
+                            <option value="Shoulders & Arms">Shoulders & Arms</option>
+                            <option value="Full Body Power">Full Body Power</option>
+                            <option value="Active Keto Recovery / Rest">Active Keto Recovery & Rest Day</option>
+                        </select>
+                        <button onclick="saveScheduleEvent()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/25 mt-1">
+                            Save Schedule for Date
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. KETO NUTRITION & POST-WORKOUT MEALS -->
+            <section id="view-nutrition" class="p-5 hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold">Keto Post-Workout Nutrition</h2>
+                        <p class="text-xs text-slate-400">High protein & clean fat recipes calibrated for recovery.</p>
+                    </div>
+                    <button onclick="openMacroCalibratorModal()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold border border-emerald-500/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Macro Goal</span>
+                    </button>
+                </div>
+
+                <!-- Macro Goal Banner -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase">Active Recovery Target</span>
+                        <span id="macro-goal-label" class="font-bold text-emerald-400">45g Protein • 40g Fats • &lt;5g Net Carbs</span>
+                    </div>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-3" id="keto-recipes-list">
+                    <!-- Recipes loaded here -->
+                </div>
+            </section>
+
+            <!-- 6. BODY METRICS & MEASUREMENTS -->
+            <section id="view-metrics" class="p-5 hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold">Body Metrics & Measurements</h2>
+                        <p class="text-xs text-slate-400">Log body weight and circumference over time.</p>
+                    </div>
+                    <button onclick="openMetricsModal()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold border border-emerald-500/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Log Entry</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3" id="metrics-archive-list">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-400 text-center py-8">
+                        <i class="fa-solid fa-scale-balanced text-2xl text-slate-600 mb-2"></i>
+                        <p>No body measurements logged yet. Tap "Log Entry" to save your stats!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. PERSONAL TRAINING JOURNAL & NOTES ARCHIVE -->
+            <section id="view-notes" class="p-5 hidden space-y-4">
+                <div>
+                    <h2 class="text-xl font-bold">Personal Training Journal</h2>
+                    <p class="text-xs text-slate-400">Review your past set notes, difficulty logs, and AI weight adjustments.</p>
+                </div>
+                
+                <div class="space-y-3" id="journal-archive-list">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-400 text-center py-8">
+                        <i class="fa-solid fa-book-open text-2xl text-slate-600 mb-2"></i>
+                        <p>No cloud journal notes found yet. Complete sets and record notes during your rest intervals!</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- BOTTOM NAV BAR -->
+        <nav class="absolute bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 px-3 py-3 flex justify-around items-center z-50">
+            <button onclick="switchView('dashboard')" id="nav-btn-dashboard" class="flex flex-col items-center text-slate-400 hover:text-emerald-400 transition nav-tab">
+                <i class="fa-solid fa-dumbbell text-base"></i>
+                <span class="text-[9px] mt-1">Workout</span>
+            </button>
+            <button onclick="switchView('calendar')" id="nav-btn-calendar" class="flex flex-col items-center text-slate-400 hover:text-emerald-400 transition nav-tab">
+                <i class="fa-solid fa-calendar-days text-base"></i>
+                <span class="text-[9px] mt-1">Calendar</span>
+            </button>
+            <button onclick="switchView('metrics')" id="nav-btn-metrics" class="flex flex-col items-center text-slate-400 hover:text-emerald-400 transition nav-tab">
+                <i class="fa-solid fa-chart-line text-base"></i>
+                <span class="text-[9px] mt-1">Metrics</span>
+            </button>
+            <button onclick="switchView('nutrition')" id="nav-btn-nutrition" class="flex flex-col items-center text-slate-400 hover:text-emerald-400 transition nav-tab">
+                <i class="fa-solid fa-utensils text-base"></i>
+                <span class="text-[9px] mt-1">Keto</span>
+            </button>
+            <button onclick="switchView('notes')" id="nav-btn-notes" class="flex flex-col items-center text-slate-400 hover:text-emerald-400 transition nav-tab">
+                <i class="fa-solid fa-book text-base"></i>
+                <span class="text-[9px] mt-1">Journal</span>
+            </button>
+        </nav>
+
+        <!-- MACRO GOAL CALIBRATOR MODAL -->
+        <div id="macro-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 class="text-sm font-bold text-slate-200">Adjust Recovery Macro Target</h3>
+                    <button onclick="closeMacroCalibratorModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+                <div class="space-y-3 text-xs pt-1">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Select Nutritional Focus</label>
+                        <select id="macro-goal-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="lean">Lean Cut & Shred (High Protein, Moderate Fat)</option>
+                            <option value="hypertrophy" selected>Maximum Muscle Hypertrophy (Balanced Keto)</option>
+                            <option value="bulking">Clean Bulking & Energy (Dense Fats & Protein)</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="applyMacroGoal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/25 mt-1">
+                    Update Recipe Calibrations
+                </button>
+            </div>
+        </div>
+
+        <!-- RECIPE DETAIL MODAL FOR SHOPPING LIST -->
+        <div id="recipe-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 id="recipe-modal-title" class="text-sm font-bold text-emerald-400">Recipe Details</h3>
+                    <button onclick="closeRecipeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block font-bold mb-1 uppercase text-[10px]">Ingredients & Shopping List:</span>
+                        <div id="recipe-modal-ingredients" class="space-y-1.5 bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block font-bold mb-1 uppercase text-[10px]">Preparation & Recovery Science:</span>
+                        <p id="recipe-modal-desc" class="text-slate-300 italic bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                            <!-- Populated dynamically -->
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeRecipeModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl transition border border-slate-700">
+                    Close Recipe View
+                </button>
+            </div>
+        </div>
+
+        <!-- INDEPENDENT EVALUATION TEST MODAL FOR BENCH & SQUAT -->
+        <div id="eval-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 class="text-sm font-bold text-slate-200">Independent Strength Evaluation</h3>
+                    <button onclick="closeEvalModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+                
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1">
+                    <p class="font-bold text-emerald-400"><i class="fa-solid fa-circle-info mr-1"></i> Instructions:</p>
+                    <p>Enter your test weight and Reps in Reserve (RIR) independently for both your upper body (Bench) and lower body (Squat).</p>
+                </div>
+
+                <div class="space-y-2.5 text-xs pt-1">
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                        <span class="font-bold text-emerald-400 text-xs block">Upper Body (Bench Press)</span>
+                        <div>
+                            <label class="block text-slate-300 mb-1 text-[11px]">Test Weight (lbs)</label>
+                            <input type="number" id="eval-bench" value="95" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 mb-1 text-[11px]">Reps in Reserve (RIR)</label>
+                            <select id="eval-bench-rir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                                <option value="2">2 Reps Left (Optimal Hypertrophy)</option>
+                                <option value="0">To Absolute Failure (0 RIR)</option>
+                                <option value="4">4+ Reps Left (Very Easy)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                        <span class="font-bold text-emerald-400 text-xs block">Lower Body (Back Squat)</span>
+                        <div>
+                            <label class="block text-slate-300 mb-1 text-[11px]">Test Weight (lbs)</label>
+                            <input type="number" id="eval-squat" value="135" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 mb-1 text-[11px]">Reps in Reserve (RIR)</label>
+                            <select id="eval-squat-rir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                                <option value="2">2 Reps Left (Optimal Hypertrophy)</option>
+                                <option value="0">To Absolute Failure (0 RIR)</option>
+                                <option value="4">4+ Reps Left (Very Easy)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="completeEvaluation()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/25 mt-1">
+                    Calculate & Save Starting Weights
+                </button>
+            </div>
+        </div>
+
+        <!-- LOG / EDIT BODY METRICS MODAL -->
+        <div id="metrics-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-5 shadow-2xl relative space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 id="metrics-modal-title" class="text-sm font-bold text-slate-200">Log Body Measurements</h3>
+                    <button onclick="closeMetricsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+
+                <form onsubmit="saveBodyMetrics(event)" class="space-y-2.5 text-xs">
+                    <input type="hidden" id="m-edit-index" value="-1">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Body Weight (lbs)</label>
+                        <input type="number" step="0.1" id="m-weight-val" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="165.0">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-300 mb-1">Waist (in)</label>
+                            <input type="number" step="0.1" id="m-waist" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="32">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 mb-1">Chest (in)</label>
+                            <input type="number" step="0.1" id="m-chest" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="42">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-300 mb-1">Biceps (in)</label>
+                            <input type="number" step="0.1" id="m-biceps" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="15">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 mb-1">Legs (in)</label>
+                            <input type="number" step="0.1" id="m-legs" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="23">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/25 mt-2">
+                        Save Measurement Log
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- EDIT PROFILE & STATS MODAL -->
+        <div id="profile-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-5 shadow-2xl relative space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 class="text-sm font-bold text-slate-200">Edit Athlete Profile</h3>
+                    <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+
+                <form onsubmit="saveModalProfile(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Name</label>
+                        <input type="text" id="m-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-300 mb-1">Age</label>
+                            <input type="number" id="m-age" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 mb-1">Weight</label>
+                            <input type="number" id="m-weight" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/25 mt-2">
+                        Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- EXERCISE INSTRUCTION INFO MODAL -->
+        <div id="anatomy-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 id="anatomy-modal-title" class="text-sm font-bold text-slate-200">Exercise Instructions</h3>
+                    <button onclick="closeAnatomyModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+
+                <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+                    <p class="font-bold text-emerald-400" id="anatomy-target-desc">Target Activation: Pectorals</p>
+                    <div id="exercise-instructions-text" class="text-slate-300 space-y-1.5 pt-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button onclick="closeAnatomyModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl transition border border-slate-700">
+                    Close Guide
+                </button>
+            </div>
+        </div>
+
+        <!-- POP-UP REST COOLDOWN TIMER MODAL WITH FEEDBACK -->
+        <div id="rest-timer-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative space-y-4">
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-400">
+                        <i class="fa-solid fa-stopwatch text-lg animate-pulse"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Cooldown & Reflection</h3>
+                    <p id="timer-exercise-label" class="text-xs text-emerald-400 font-medium">Set Completed</p>
+                    <div id="timer-display" class="text-4xl font-extrabold text-white tracking-widest my-2 font-mono">01:30</div>
+                </div>
+
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800 space-y-2">
+                    <label class="block text-xs font-medium text-slate-300 text-center">Able to complete target reps with good form?</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button type="button" onclick="setAbility('easy')" id="btn-able-easy" class="bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-semibold py-2 rounded-lg transition">Too Easy (+10)</button>
+                        <button type="button" onclick="setAbility(true)" id="btn-able-yes" class="bg-emerald-600/20 border border-emerald-500 text-emerald-400 text-[11px] font-semibold py-2 rounded-lg transition">Good (+5)</button>
+                        <button type="button" onclick="setAbility(false)" id="btn-able-no" class="bg-slate-800 border border-slate-700 text-slate-400 text-[11px] font-semibold py-2 rounded-lg transition">Struggled (-5)</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Set Notes & Form Observations</label>
+                    <textarea id="modal-set-notes" rows="2" placeholder="e.g. Felt heavy on rep 7, keep elbows tucked next time..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"></textarea>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="adjustTimer(30)" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-xl border border-slate-700 transition flex-1">+30s Rest</button>
+                    <button onclick="submitSetFeedback()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 px-4 rounded-xl transition shadow-lg shadow-emerald-600/25 flex-1">
+                        Save & Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK FOCUS CHANGE MODAL -->
+        <div id="focus-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold">Update Muscle Focus Areas</h3>
+                    <button onclick="closeFocusModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+                <p class="text-xs text-slate-400">Select target areas to instantly adjust your routine's priority emphasis.</p>
+                
+                <div class="grid grid-cols-3 gap-2 text-center" id="modal-muscle-selector">
+                    <div onclick="toggleModalFocus('Chest')" id="m-focus-Chest" class="modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1">
+                        <i class="fa-solid fa-child-reaching text-emerald-400 text-sm"></i>
+                        <span>Chest</span>
+                    </div>
+                    <div onclick="toggleModalFocus('Back')" id="m-focus-Back" class="modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1">
+                        <i class="fa-solid fa-arrows-split-up-and-left text-emerald-400 text-sm"></i>
+                        <span>Back</span>
+                    </div>
+                    <div onclick="toggleModalFocus('Legs')" id="m-focus-Legs" class="modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1">
+                        <i class="fa-solid fa-person-walking text-emerald-400 text-sm"></i>
+                        <span>Legs</span>
+                    </div>
+                    <div onclick="toggleModalFocus('Shoulders')" id="m-focus-Shoulders" class="modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1">
+                        <i class="fa-solid fa-arrows-up-down text-emerald-400 text-sm"></i>
+                        <span>Shoulders</span>
+                    </div>
+                    <div onclick="toggleModalFocus('Arms')" id="m-focus-Arms" class="modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1">
+                        <i class="fa-solid fa-hand-fist text-emerald-400 text-sm"></i>
+                        <span>Arms</span>
+                    </div>
+                    <div onclick="toggleModalFocus('Core')" id="m-focus-Core" class="modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1">
+                        <i class="fa-solid fa-shield-halved text-emerald-400 text-sm"></i>
+                        <span>Core</span>
+                    </div>
+                </div>
+
+                <button onclick="applyFocusUpdate()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-600/25">
+                    Apply & Recalibrate Routine
+                </button>
+            </div>
+        </div>
+
+        <!-- VIDEO EMBED MODAL -->
+        <div id="video-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+                <div class="p-3 border-b border-slate-800 flex items-center justify-between">
+                    <h3 id="modal-video-title" class="text-sm font-bold truncate">Exercise Video Reference</h3>
+                    <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white px-2 py-1 text-xs"><i class="fa-solid fa-xmark text-base"></i></button>
+                </div>
+                <div class="aspect-video bg-slate-950 flex flex-col items-center justify-center p-6 text-center relative">
+                    <div id="video-loading" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center space-y-2">
+                        <i class="fa-brands fa-youtube text-red-500 text-4xl animate-bounce"></i>
+                        <p class="text-xs text-slate-400">Loading reference tutorial...</p>
+                    </div>
+                    <iframe id="youtube-iframe" class="w-full h-full rounded-lg hidden" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div class="p-3 bg-slate-900/80 text-[11px] text-slate-400 text-center">
+                    Demonstrating strict form & range of motion.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FIREBASE & APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let app = null, auth = null, db = null;
+        const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        
+        try {
+            const firebaseConfig = JSON.parse(rawConfig);
+            if (firebaseConfig.apiKey) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch (e) {
+            console.warn("Running in local mode. Cloud sync disabled.");
+        }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kinetic-keto-app';
+
+        let countdownTimer = null;
+        let timeLeft = 90;
+        let selectedFocusAreas = ["Chest", "Legs", "Back", "Shoulders", "Arms"]; 
+        let userEquipment = ["Barbell", "Dumbbells", "Resistance Bands", "Bench"];
+        let selectedDurationMin = 45;
+        let evaluationMode = "known";
+        let activeMacroGoal = "hypertrophy";
+        
+        let exerciseProgress = {};
+        let activeModalEx = null;
+        let currentAbleStatus = true;
+        let personalJournal = [];
+        let bodyMetricsLogs = [];
+        let userProfile = null;
+        let scheduledWorkouts = {};
+        let selectedCalendarDate = new Date().toISOString().split('T')[0];
+        let currentCalendarDate = new Date();
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            updateMuscleSelectorUI();
+            renderCalendar();
+            loadKetoMeals();
+            updateWorkoutDateHeader();
+            
+            if (auth) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (e) {
+                    console.error("Auth error:", e);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        await loadCloudData(user.uid);
+                    }
+                });
+            } else {
+                generateDefaultPeriodizedSchedule();
+                buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+            }
+        });
+
+        async function loadCloudData(uid) {
+            if (!db) return;
+            try {
+                const profileRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data');
+                const profileSnap = await getDoc(profileRef);
+                if (profileSnap.exists()) {
+                    userProfile = profileSnap.data();
+                    if (userProfile.focusAreas) selectedFocusAreas = userProfile.focusAreas;
+                    if (userProfile.equipment) userEquipment = userProfile.equipment;
+                    if (userProfile.name) {
+                        document.getElementById('nav-username').innerText = userProfile.name;
+                    }
+                    if (userProfile.exerciseProgress) {
+                        exerciseProgress = userProfile.exerciseProgress;
+                    }
+                }
+
+                const journalCol = collection(db, 'artifacts', appId, 'users', uid, 'journal');
+                const journalSnap = await getDocs(journalCol);
+                personalJournal = [];
+                journalSnap.forEach(d => {
+                    personalJournal.push(d.data());
+                });
+                renderJournalArchive();
+
+                const metricsCol = collection(db, 'artifacts', appId, 'users', uid, 'metrics');
+                const metricsSnap = await getDocs(metricsCol);
+                bodyMetricsLogs = [];
+                metricsSnap.forEach(d => {
+                    bodyMetricsLogs.push(d.data());
+                });
+                renderMetricsArchive();
+
+                const scheduleCol = collection(db, 'artifacts', appId, 'users', uid, 'schedule');
+                const scheduleSnap = await getDocs(scheduleCol);
+                scheduledWorkouts = {};
+                scheduleSnap.forEach(d => {
+                    const dat = d.data();
+                    scheduledWorkouts[dat.date] = dat.workoutType;
+                });
+                
+                if (Object.keys(scheduledWorkouts).length === 0) {
+                    window.generateSmartCalendar();
+                } else {
+                    renderCalendar();
+                }
+
+                updateWorkoutDateHeader();
+                buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+            } catch (e) {
+                console.error("Error loading cloud data:", e);
+                generateDefaultPeriodizedSchedule();
+                updateWorkoutDateHeader();
+                buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+            }
+        }
+
+        window.startFaceScan = async function() {
+            const laser = document.getElementById('scan-laser');
+            const status = document.getElementById('scanner-status');
+            const btn = document.getElementById('scan-btn');
+
+            laser.classList.remove('hidden');
+            laser.style.animation = 'none';
+            laser.offsetHeight;
+            laser.style.animation = 'scanMotion 1.5s ease-in-out infinite alternate';
+            
+            status.innerText = "Analyzing Facial Geometry...";
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            const styleSheet = document.createElement("style");
+            styleSheet.innerText = `@keyframes scanMotion { 0% { top: 0%; } 100% { top: 95%; } }`;
+            document.head.appendChild(styleSheet);
+
+            setTimeout(async () => {
+                status.innerText = "Match Verified: Welcome Back!";
+                status.classList.add('text-emerald-400', 'border-emerald-500/50');
+                
+                setTimeout(() => {
+                    if (userProfile && userProfile.name) {
+                        document.getElementById('nav-username').innerText = userProfile.name;
+                        updateWorkoutDateHeader();
+                        buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+                        loadKetoMeals();
+                        switchView('dashboard');
+                    } else {
+                        switchView('onboard');
+                    }
+                }, 800);
+            }, 1800);
+        }
+
+        window.setEvalMode = function(mode) {
+            evaluationMode = mode;
+            const knownLbl = document.getElementById('mode-known-lbl');
+            const evalLbl = document.getElementById('mode-eval-lbl');
+            if (mode === 'known') {
+                knownLbl.className = "flex items-center justify-center space-x-1.5 p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-400 text-xs font-semibold cursor-pointer text-center";
+                evalLbl.className = "flex items-center justify-center space-x-1.5 p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-xs font-medium cursor-pointer text-center";
+            } else {
+                evalLbl.className = "flex items-center justify-center space-x-1.5 p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-400 text-xs font-semibold cursor-pointer text-center";
+                knownLbl.className = "flex items-center justify-center space-x-1.5 p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 text-xs font-medium cursor-pointer text-center";
+                document.getElementById('eval-modal').classList.remove('hidden');
+            }
+        }
+
+        window.closeEvalModal = function() {
+            document.getElementById('eval-modal').classList.add('hidden');
+        }
+
+        window.completeEvaluation = function() {
+            const benchInput = parseFloat(document.getElementById('eval-bench').value) || 95;
+            const benchRir = parseInt(document.getElementById('eval-bench-rir').value, 10);
+            const squatInput = parseFloat(document.getElementById('eval-squat').value) || 135;
+            const squatRir = parseInt(document.getElementById('eval-squat-rir').value, 10);
+
+            const benchMult = 1 + (benchRir * 0.033);
+            const squatMult = 1 + (squatRir * 0.033);
+
+            const estBench1RM = benchInput * benchMult;
+            const estSquat1RM = squatInput * squatMult;
+
+            exerciseProgress["ex_bench"] = { completedSets: 0, currentWeight: Math.round(estBench1RM * 0.75), week: 1, isCompleted: false };
+            exerciseProgress["ex_squat"] = { completedSets: 0, currentWeight: Math.round(estSquat1RM * 0.75), week: 1, isCompleted: false };
+
+            closeEvalModal();
+        }
+
+        window.saveProfile = async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('p-name').value;
+            const age = document.getElementById('p-age').value;
+            const sex = document.getElementById('p-sex').value;
+            const height = document.getElementById('p-height').value;
+            const heightUnit = document.getElementById('p-height-unit').value;
+            const weight = document.getElementById('p-weight').value;
+            const weightUnit = document.getElementById('p-weight-unit').value;
+            
+            userEquipment = Array.from(document.querySelectorAll('input[name="eq"]:checked')).map(el => el.value);
+
+            userProfile = {
+                name, age, sex, height, heightUnit, weight, weightUnit,
+                focusAreas: selectedFocusAreas,
+                equipment: userEquipment,
+                exerciseProgress,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (db && auth && auth.currentUser) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile', 'data'), userProfile);
+                } catch (err) {
+                    console.error("Failed to save profile to cloud:", err);
+                }
+            }
+
+            document.getElementById('nav-username').innerText = name;
+            window.generateSmartCalendar();
+            updateWorkoutDateHeader();
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+            loadKetoMeals();
+            switchView('dashboard');
+        }
+
+        window.openProfileModal = function() {
+            if (userProfile) {
+                document.getElementById('m-name').value = userProfile.name || "";
+                document.getElementById('m-age').value = userProfile.age || "";
+                document.getElementById('m-weight').value = userProfile.weight || "";
+            }
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        window.closeProfileModal = function() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        window.saveModalProfile = async function(e) {
+            e.preventDefault();
+            if (!userProfile) return;
+
+            userProfile.name = document.getElementById('m-name').value;
+            userProfile.age = document.getElementById('m-age').value;
+            userProfile.weight = document.getElementById('m-weight').value;
+            userProfile.updatedAt = new Date().toISOString();
+
+            if (db && auth && auth.currentUser) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile', 'data'), userProfile);
+                } catch (err) {
+                    console.error("Failed to update profile:", err);
+                }
+            }
+            document.getElementById('nav-username').innerText = userProfile.name;
+            closeProfileModal();
+        }
+
+        window.openMetricsModal = function(editIndex = -1) {
+            document.getElementById('m-edit-index').value = editIndex;
+            if (editIndex >= 0 && bodyMetricsLogs[editIndex]) {
+                const item = bodyMetricsLogs[editIndex];
+                document.getElementById('metrics-modal-title').innerText = "Edit Body Measurements";
+                document.getElementById('m-weight-val').value = item.weight;
+                document.getElementById('m-waist').value = item.waist !== "-" ? item.waist : "";
+                document.getElementById('m-chest').value = item.chest !== "-" ? item.chest : "";
+                document.getElementById('m-biceps').value = item.biceps !== "-" ? item.biceps : "";
+                document.getElementById('m-legs').value = item.legs !== "-" ? item.legs : "";
+            } else {
+                document.getElementById('metrics-modal-title').innerText = "Log Body Measurements";
+                document.getElementById('m-weight-val').value = "";
+                document.getElementById('m-waist').value = "";
+                document.getElementById('m-chest').value = "";
+                document.getElementById('m-biceps').value = "";
+                document.getElementById('m-legs').value = "";
+            }
+            document.getElementById('metrics-modal').classList.remove('hidden');
+        }
+
+        window.closeMetricsModal = function() {
+            document.getElementById('metrics-modal').classList.add('hidden');
+        }
+
+        window.saveBodyMetrics = async function(e) {
+            e.preventDefault();
+            const editIndex = parseInt(document.getElementById('m-edit-index').value, 10);
+            const weight = document.getElementById('m-weight-val').value;
+            const waist = document.getElementById('m-waist').value || "-";
+            const chest = document.getElementById('m-chest').value || "-";
+            const biceps = document.getElementById('m-biceps').value || "-";
+            const legs = document.getElementById('m-legs').value || "-";
+
+            const logEntry = {
+                weight, waist, chest, biceps, legs,
+                dateStr: editIndex >= 0 ? bodyMetricsLogs[editIndex].dateStr : new Date().toLocaleDateString(),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            if (editIndex >= 0) {
+                bodyMetricsLogs[editIndex] = logEntry;
+            } else {
+                bodyMetricsLogs.unshift(logEntry);
+            }
+
+            renderMetricsArchive();
+            closeMetricsModal();
+
+            if (db && auth && auth.currentUser) {
+                try {
+                    const metricsCol = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'metrics');
+                    await addDoc(metricsCol, logEntry);
+                } catch (err) {
+                    console.error("Failed to save metrics to cloud:", err);
+                }
+            }
+        }
+
+        window.openMacroCalibratorModal = function() {
+            document.getElementById('macro-modal').classList.remove('hidden');
+        }
+
+        window.closeMacroCalibratorModal = function() {
+            document.getElementById('macro-modal').classList.add('hidden');
+        }
+
+        window.applyMacroGoal = function() {
+            activeMacroGoal = document.getElementById('macro-goal-select').value;
+            closeMacroCalibratorModal();
+            loadKetoMeals();
+        }
+
+        window.openRecipeDetails = function(recipeName) {
+            const recipe = ketoRecipesDatabase.find(r => r.name === recipeName);
+            if (!recipe) return;
+
+            document.getElementById('recipe-modal-title').innerText = recipe.name;
+            document.getElementById('recipe-modal-desc').innerText = recipe.science;
+            
+            const ingContainer = document.getElementById('recipe-modal-ingredients');
+            ingContainer.innerHTML = '';
+            recipe.ingredients.forEach((ing, i) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center space-x-2";
+                div.innerHTML = `<input type="checkbox" class="rounded border-slate-700 text-emerald-600 focus:ring-emerald-500"><span>${ing}</span>`;
+                ingContainer.appendChild(div);
+            });
+
+            document.getElementById('recipe-modal').classList.remove('hidden');
+        }
+
+        window.closeRecipeModal = function() {
+            document.getElementById('recipe-modal').classList.add('hidden');
+        }
+
+        function renderMetricsArchive() {
+            const container = document.getElementById('metrics-archive-list');
+            if (bodyMetricsLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-400 text-center py-8">
+                        <i class="fa-solid fa-scale-balanced text-2xl text-slate-600 mb-2"></i>
+                        <p>No body measurements logged yet. Tap "Log Entry" to save your stats!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            bodyMetricsLogs.forEach((entry, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2 text-xs relative";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-1.5">
+                        <span class="font-bold text-emerald-400">${entry.weight} lbs</span>
+                        <div class="flex items-center space-x-2">
+                            <span>${entry.dateStr}</span>
+                            <button onclick="openMetricsModal(${idx})" class="text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-pen-to-square"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 text-center text-[11px] pt-1">
+                        <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">Waist</span>
+                            <span class="font-semibold text-slate-200">${entry.waist}"</span>
+                        </div>
+                        <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">Chest</span>
+                            <span class="font-semibold text-slate-200">${entry.chest}"</span>
+                        </div>
+                        <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">Biceps</span>
+                            <span class="font-semibold text-slate-200">${entry.biceps}"</span>
+                        </div>
+                        <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">Legs</span>
+                            <span class="font-semibold text-slate-200">${entry.legs}"</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function generateDefaultPeriodizedSchedule() {
+            const splits = [
+                "Chest & Triceps Hypertrophy",
+                "Back & Biceps Power",
+                "Leg Day & Core",
+                "Shoulders & Arms",
+                "Full Body Power",
+                "Active Keto Recovery / Rest"
+            ];
+
+            const today = new Date();
+            for (let i = -10; i <= 30; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                const dateStr = d.toISOString().split('T')[0];
+                if (!scheduledWorkouts[dateStr]) {
+                    const splitIndex = Math.abs(i) % splits.length;
+                    scheduledWorkouts[dateStr] = splits[splitIndex];
+                }
+            }
+        }
+
+        window.generateSmartCalendar = async function() {
+            generateDefaultPeriodizedSchedule();
+            renderCalendar();
+
+            if (db && auth && auth.currentUser) {
+                try {
+                    for (const [dateStr, workoutType] of Object.entries(scheduledWorkouts)) {
+                        const scheduleCol = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'schedule');
+                        await addDoc(scheduleCol, { date: dateStr, workoutType, updatedAt: new Date().toISOString() });
+                    }
+                } catch (e) {
+                    console.error("Error saving smart schedule to cloud:", e);
+                }
+            }
+        }
+
+        window.changeMonth = function(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-days-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            document.getElementById('calendar-month-year').innerText = `${monthNames[month]} ${year}`;
+
+            if (Object.keys(scheduledWorkouts).length === 0) {
+                generateDefaultPeriodizedSchedule();
+            }
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                const empty = document.createElement('div');
+                empty.className = "h-12 bg-slate-950/20 rounded-xl opacity-20";
+                grid.appendChild(empty);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isSelected = dateStr === selectedCalendarDate;
+                const workout = scheduledWorkouts[dateStr] || "Full Body Power";
+
+                let dotColor = "bg-emerald-500";
+                if (workout.includes("Rest")) dotColor = "bg-slate-500";
+                else if (workout.includes("Back")) dotColor = "bg-teal-400";
+                else if (workout.includes("Leg")) dotColor = "bg-indigo-400";
+                else if (workout.includes("Shoulders")) dotColor = "bg-amber-400";
+
+                const cell = document.createElement('div');
+                cell.className = `h-14 rounded-xl border flex flex-col items-center justify-between p-1.5 cursor-pointer transition relative ${isSelected ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-slate-800 bg-slate-950 hover:border-slate-700'}`;
+                cell.onclick = () => selectCalendarDate(dateStr);
+                
+                cell.innerHTML = `
+                    <span class="text-xs font-bold ${isSelected ? 'text-emerald-400' : 'text-slate-300'}">${day}</span>
+                    <div class="w-1.5 h-1.5 rounded-full ${dotColor}"></div>
+                `;
+                grid.appendChild(cell);
+            }
+
+            document.getElementById('selected-date-label').innerText = `Date: ${selectedCalendarDate}`;
+            const currentWorkout = scheduledWorkouts[selectedCalendarDate] || "Full Body Power";
+            document.getElementById('selected-date-badge').innerText = currentWorkout;
+            if (scheduledWorkouts[selectedCalendarDate]) {
+                document.getElementById('schedule-workout-type').value = scheduledWorkouts[selectedCalendarDate];
+            }
+        }
+
+        window.selectCalendarDate = function(dateStr) {
+            selectedCalendarDate = dateStr;
+            renderCalendar();
+            updateWorkoutDateHeader();
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+        }
+
+        window.shiftWorkoutDate = function(direction) {
+            const curr = new Date(selectedCalendarDate + 'T00:00:00');
+            curr.setDate(curr.getDate() + direction);
+            selectedCalendarDate = curr.toISOString().split('T')[0];
+            currentCalendarDate = new Date(curr);
+            renderCalendar();
+            updateWorkoutDateHeader();
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+        }
+
+        function updateWorkoutDateHeader() {
+            const displayEl = document.getElementById('workout-date-display');
+            const dayTagEl = document.getElementById('workout-day-tag');
+            if (!displayEl) return;
+
+            const targetDate = new Date(selectedCalendarDate + 'T00:00:00');
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            displayEl.innerText = targetDate.toLocaleDateString('en-US', options);
+
+            if (selectedCalendarDate === todayStr) {
+                dayTagEl.innerText = "Today";
+            } else if (selectedCalendarDate > todayStr) {
+                dayTagEl.innerText = "Scheduled Future";
+            } else {
+                dayTagEl.innerText = "Past Log Review";
+            }
+        }
+
+        window.saveScheduleEvent = async function() {
+            const workoutType = document.getElementById('schedule-workout-type').value;
+            scheduledWorkouts[selectedCalendarDate] = workoutType;
+            renderCalendar();
+            updateWorkoutDateHeader();
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+
+            if (db && auth && auth.currentUser) {
+                try {
+                    const scheduleCol = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'schedule');
+                    await addDoc(scheduleCol, { date: selectedCalendarDate, workoutType, updatedAt: new Date().toISOString() });
+                } catch (err) {
+                    console.error("Failed to save schedule to cloud:", err);
+                }
+            }
+        }
+
+        const ketoRecipesDatabase = [
+            {
+                name: "Avocado & Salmon Keto Bowl",
+                macros: "42g Protein • 35g Healthy Fats • 4g Net Carbs",
+                desc: "Wild-caught salmon rich in Omega-3 paired with mashed avocado, olive oil drizzle, and sea salt. Perfect muscle recovery with zero insulin spike.",
+                ingredients: ["200g Wild Salmon Fillet", "1 Whole Hass Avocado", "1 tbsp Extra Virgin Olive Oil", "Himalayan Pink Salt & Dill", "1 Lemon Wedge"],
+                science: "Rich in omega-3 polyunsaturated fatty acids to lower systemic inflammation post-heavy resistance training while providing clean amino acids for muscle repair."
+            },
+            {
+                name: "Ribeye Steak & Garlic Butter Spinach",
+                macros: "55g Protein • 48g Healthy Fats • 2g Net Carbs",
+                desc: "Grass-fed ribeye steak loaded with bioavailable amino acids, creatine, and saturated fats for hormonal balance.",
+                ingredients: ["250g Grass-Fed Ribeye", "2 cups Fresh Baby Spinach", "1.5 tbsp Grass-Fed Butter", "Minced Garlic & Rosemary", "Sea Salt & Black Pepper"],
+                science: "Grass-fed beef provides natural dietary creatine and bioavailable zinc to support testosterone synthesis and rapid ATP regeneration."
+            },
+            {
+                name: "MCT Oil Whey Protein Post-Workout Shake",
+                macros: "50g Protein • 15g Healthy Fats • 2g Net Carbs",
+                desc: "Fast-absorbing isolate blended with MCT oil for rapid ketosis support and prolonged mTOR muscle protein synthesis.",
+                ingredients: ["2 Scoops Isolate Whey Protein", "1 tbsp Organic MCT Oil", "1 cup Unsweetened Almond Milk", "Ice Cubes", "1/2 tsp Cinnamon"],
+                science: "Whey isolate delivers a massive leucine spike to trigger mTOR, while MCT oil provides instant mitochondrial ketone fuel without elevating blood glucose."
+            },
+            {
+                name: "Keto Bacon & Avocado Omelette",
+                macros: "38g Protein • 42g Healthy Fats • 3g Net Carbs",
+                desc: "Pasture-raised eggs whipped with heavy cream, folded with crispy bacon bits and sliced avocado.",
+                ingredients: ["3 Pasture-Raised Eggs", "2 slices Thick-cut Bacon", "1/2 Avocado Sliced", "1 tbsp Butter", "1 oz Cheddar Cheese"],
+                science: "Pasture-raised eggs provide complete amino acid profiles and high choline content for neuromuscular recovery."
+            }
+        ];
+
+        // Comprehensive Exercise Database with full movement lists and equipment filtering
+        const exerciseDatabase = {
+            "Chest": [
+                { 
+                    id: "ex_bench", 
+                    name: "Barbell Bench Press", 
+                    category: "Chest", 
+                    requiredEquipment: "Barbell",
+                    tags: ["Pectorals", "Anterior Deltoids", "Triceps"], 
+                    warmups: ["1x10 @ 45 lbs (Bar)", "1x8 @ 75 lbs"], 
+                    totalSets: 3, 
+                    targetReps: "6-8 Reps", 
+                    rest: 90, 
+                    defaultWeight: 135, 
+                    yt: "https://www.youtube.com/embed/rT7DgCr-3pg",
+                    instructions: [
+                        "Lie flat on the bench with your eyes directly under the racked barbell.",
+                        "Grip the bar slightly wider than shoulder-width with wrists stacked straight over elbows.",
+                        "Unrack the bar and inhale as you slowly lower it to your mid-chest.",
+                        "Drive your feet into the floor and press the bar explosively back to starting lock-out position."
+                    ]
+                },
+                { 
+                    id: "ex_incline", 
+                    name: "Incline Dumbbell Press", 
+                    category: "Chest", 
+                    requiredEquipment: "Bench",
+                    tags: ["Upper Chest", "Front Delts", "Triceps"], 
+                    warmups: ["1x10 @ 20 lbs DBs"], 
+                    totalSets: 3, 
+                    targetReps: "8-10 Reps", 
+                    rest: 75, 
+                    defaultWeight: 50, 
+                    yt: "https://www.youtube.com/embed/8iPEnkdVIkg",
+                    instructions: [
+                        "Set an adjustable bench to a 30 to 45-degree incline angle.",
+                        "Hold dumbbells at chest level with palms facing forward.",
+                        "Press the dumbbells upward in an arc until arms are extended overhead.",
+                        "Control the descent back down to stretch the upper pectoral fibers."
+                    ]
+                },
+                { 
+                    id: "ex_pushups", 
+                    name: "Decline Push-ups", 
+                    category: "Chest", 
+                    requiredEquipment: null,
+                    tags: ["Lower Pectorals", "Core"], 
+                    warmups: ["1x15 Bodyweight"], 
+                    totalSets: 3, 
+                    targetReps: "12-15 Reps", 
+                    rest: 60, 
+                    defaultWeight: 0, 
+                    yt: "https://www.youtube.com/embed/IODxDxX7oi4",
+                    instructions: [
+                        "Elevate your feet on a stable platform or bench with hands on the floor.",
+                        "Keep your body in a rigid plank position with core braced.",
+                        "Lower your chest toward the floor by bending your elbows at a 45-degree angle.",
+                        "Push back up forcefully to starting position."
+                    ]
+                }
+            ],
+            "Back": [
+                { 
+                    id: "ex_pullup", 
+                    name: "Weighted Pull-ups", 
+                    category: "Back", 
+                    requiredEquipment: "Pull-up Bar",
+                    tags: ["Latissimus Dorsi", "Biceps", "Upper Back"], 
+                    warmups: ["1x8 Bodyweight"], 
+                    totalSets: 3, 
+                    targetReps: "6-8 Reps", 
+                    rest: 90, 
+                    defaultWeight: 25, 
+                    yt: "https://www.youtube.com/embed/eGo4IYlbE5g",
+                    instructions: [
+                        "Grip the pull-up bar with an overhand grip slightly wider than shoulder-width.",
+                        "Hang with fully extended arms, engaging your core and scapula.",
+                        "Pull your chest up toward the bar by driving your elbows down and back.",
+                        "Lower yourself under control to full dead-hang position."
+                    ]
+                },
+                { 
+                    id: "ex_row", 
+                    name: "Barbell Bent-Over Row", 
+                    category: "Back", 
+                    requiredEquipment: "Barbell",
+                    tags: ["Rhomboids", "Lats", "Rear Delts"], 
+                    warmups: ["1x10 @ 65 lbs"], 
+                    totalSets: 3, 
+                    targetReps: "8-10 Reps", 
+                    rest: 90, 
+                    defaultWeight: 115, 
+                    yt: "https://www.youtube.com/embed/FWJR5Ve8bnQ",
+                    instructions: [
+                        "Hinge at the hips with a slight bend in your knees, keeping your back flat.",
+                        "Grip the barbell shoulder-width apart.",
+                        "Pull the bar toward your lower ribcage, squeezing your shoulder blades together.",
+                        "Lower the weight smoothly under control."
+                    ]
+                },
+                { 
+                    id: "ex_db_row", 
+                    name: "Single-Arm Dumbbell Row", 
+                    category: "Back", 
+                    requiredEquipment: "Bench",
+                    tags: ["Lats", "Mid-Back", "Biceps"], 
+                    warmups: ["1x10 @ 30 lbs"], 
+                    totalSets: 3, 
+                    targetReps: "10 Reps", 
+                    rest: 60, 
+                    defaultWeight: 50, 
+                    yt: "https://www.youtube.com/embed/pShLh_toavA",
+                    instructions: [
+                        "Place one knee and hand on a flat bench to support your torso.",
+                        "Hold a dumbbell in your free hand with arm extended down.",
+                        "Pull the dumbbell up toward your hip, keeping your elbow close to your body.",
+                        "Lower with control and repeat for all reps before switching sides."
+                    ]
+                }
+            ],
+            "Legs": [
+                { 
+                    id: "ex_squat", 
+                    name: "Barbell Back Squat", 
+                    category: "Legs", 
+                    requiredEquipment: "Barbell",
+                    tags: ["Quadriceps", "Glutes", "Core"], 
+                    warmups: ["1x10 @ 45 lbs (Bar)", "1x8 @ 115 lbs"], 
+                    totalSets: 3, 
+                    targetReps: "5-8 Reps", 
+                    rest: 120, 
+                    defaultWeight: 185, 
+                    yt: "https://www.youtube.com/embed/ultWZbUMPL8",
+                    instructions: [
+                        "Position the barbell securely across your upper trapezius muscles.",
+                        "Unrack the bar, step back, and set feet slightly wider than shoulder-width.",
+                        "Initiate the descent by breaking at your hips and knees simultaneously, keeping chest upright.",
+                        "Squat until your hip crease drops below the top of your knees, then drive straight up."
+                    ]
+                },
+                { 
+                    id: "ex_rdl", 
+                    name: "Dumbbell Romanian Deadlift", 
+                    category: "Legs", 
+                    requiredEquipment: "Dumbbells",
+                    tags: ["Hamstrings", "Glutes", "Erector Spinae"], 
+                    warmups: ["1x10 @ 30 lbs DBs"], 
+                    totalSets: 3, 
+                    targetReps: "8-10 Reps", 
+                    rest: 90, 
+                    defaultWeight: 60, 
+                    yt: "https://www.youtube.com/embed/JCgEwxfb5b8",
+                    instructions: [
+                        "Hold dumbbells in front of your thighs with a neutral spine.",
+                        "Push your hips back as far as possible while keeping a soft bend in your knees.",
+                        "Lower the dumbbells down along your shins until you feel a deep stretch in your hamstrings.",
+                        "Drive your hips forward to return to standing."
+                    ]
+                },
+                { 
+                    id: "ex_lunges", 
+                    name: "Walking Lunges", 
+                    category: "Legs", 
+                    requiredEquipment: null,
+                    tags: ["Quads", "Glutes", "Balance"], 
+                    warmups: ["1x12 Bodyweight"], 
+                    totalSets: 3, 
+                    targetReps: "12 Steps", 
+                    rest: 60, 
+                    defaultWeight: 0, 
+                    yt: "https://www.youtube.com/embed/D7KaRcUTQeE",
+                    instructions: [
+                        "Stand tall with feet hip-width apart.",
+                        "Take a large step forward with one leg and lower your hips until both knees bend at 90 degrees.",
+                        "Push off your front foot to bring your back foot forward into the next step.",
+                        "Maintain an upright torso throughout."
+                    ]
+                }
+            ],
+            "Shoulders": [
+                {
+                    id: "ex_ohp",
+                    name: "Standing Overhead Press",
+                    category: "Shoulders",
+                    requiredEquipment: "Barbell",
+                    tags: ["Deltoids", "Triceps", "Upper Chest"],
+                    warmups: ["1x10 @ 45 lbs"],
+                    totalSets: 3,
+                    targetReps: "6-8 Reps",
+                    rest: 90,
+                    defaultWeight: 95,
+                    yt: "https://www.youtube.com/embed/2yjwXTZQSj4",
+                    instructions: [
+                        "Hold the barbell at shoulder height with an overhand grip.",
+                        "Brace your core and glutes tightly to protect your lower back.",
+                        "Press the bar straight overhead, shifting your head forward slightly as the bar clears your face.",
+                        "Lock out overhead and return to the front rack position."
+                    ]
+                }
+            ],
+            "Arms": [
+                {
+                    id: "ex_curl",
+                    name: "Barbell Bicep Curls",
+                    category: "Arms",
+                    requiredEquipment: "Barbell",
+                    tags: ["Biceps", "Brachialis"],
+                    warmups: ["1x12 @ 45 lbs"],
+                    totalSets: 3,
+                    targetReps: "10-12 Reps",
+                    rest: 60,
+                    defaultWeight: 65,
+                    yt: "https://www.youtube.com/embed/kwG2ipFRgfo",
+                    instructions: [
+                        "Hold the barbell with an underhand grip at hip height.",
+                        "Keep your elbows pinned tightly to your sides.",
+                        "Curl the bar upward toward your chest, contracting your biceps at the top.",
+                        "Lower the bar slowly back to full extension."
+                    ]
+                }
+            ],
+            "Core": [
+                {
+                    id: "ex_plank",
+                    name: "Forearm Plank",
+                    category: "Core",
+                    requiredEquipment: null,
+                    tags: ["Transverse Abdominis", "Stability"],
+                    warmups: ["1x30s Hold"],
+                    totalSets: 3,
+                    targetReps: "45s Hold",
+                    rest: 45,
+                    defaultWeight: 0,
+                    yt: "https://www.youtube.com/embed/ASdvN_XD_Mg",
+                    instructions: [
+                        "Rest your forearms on the floor with elbows aligned directly under your shoulders.",
+                        "Extend your legs back and lift your hips to form a straight line from head to heels.",
+                        "Engage your abs and squeeze your glutes without letting your hips sag."
+                    ]
+                }
+            ]
+        };
+
+        window.toggleHeightUnit = function() {
+            const unit = document.getElementById('p-height-unit').value;
+            const heightInput = document.getElementById('p-height');
+            if (heightInput.value) {
+                let val = parseFloat(heightInput.value);
+                if (unit === 'cm') heightInput.value = Math.round(val * 2.54);
+                else heightInput.value = Math.round(val / 2.54);
+            }
+        }
+
+        window.toggleWeightUnit = function() {
+            const unit = document.getElementById('p-weight-unit').value;
+            const weightInput = document.getElementById('p-weight');
+            if (weightInput.value) {
+                let val = parseFloat(weightInput.value);
+                if (unit === 'kg') weightInput.value = Math.round(val / 2.20462);
+                else weightInput.value = Math.round(val * 2.20462);
+            }
+        }
+
+        window.toggleMuscleFocus = function(area) {
+            const index = selectedFocusAreas.indexOf(area);
+            if (index > -1) selectedFocusAreas.splice(index, 1);
+            else selectedFocusAreas.push(area);
+            updateMuscleSelectorUI();
+        }
+
+        function updateMuscleSelectorUI() {
+            ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'].forEach(area => {
+                const node = document.getElementById(`focus-${area}`);
+                if (!node) return;
+                if (selectedFocusAreas.includes(area)) {
+                    node.className = "muscle-node bg-emerald-500/20 border border-emerald-500 p-2.5 rounded-xl cursor-pointer transition text-xs font-semibold flex flex-col items-center space-y-1 shadow-lg shadow-emerald-500/10 text-emerald-300";
+                } else {
+                    node.className = "muscle-node bg-slate-800 border border-slate-700/80 p-2.5 rounded-xl cursor-pointer transition hover:border-emerald-500 text-xs font-medium flex flex-col items-center space-y-1 text-slate-300";
+                }
+            });
+        }
+
+        window.openFocusModal = function() {
+            updateModalFocusUI();
+            document.getElementById('focus-modal').classList.remove('hidden');
+        }
+
+        window.closeFocusModal = function() {
+            document.getElementById('focus-modal').classList.add('hidden');
+        }
+
+        window.toggleModalFocus = function(area) {
+            const index = selectedFocusAreas.indexOf(area);
+            if (index > -1) selectedFocusAreas.splice(index, 1);
+            else selectedFocusAreas.push(area);
+            updateModalFocusUI();
+        }
+
+        function updateModalFocusUI() {
+            ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'].forEach(area => {
+                const node = document.getElementById(`m-focus-${area}`);
+                if (!node) return;
+                if (selectedFocusAreas.includes(area)) {
+                    node.className = "modal-node bg-emerald-500/20 border border-emerald-500 p-2.5 rounded-xl cursor-pointer transition text-xs font-semibold flex flex-col items-center space-y-1 text-emerald-300";
+                } else {
+                    node.className = "modal-node bg-slate-800 border border-slate-700 p-2.5 rounded-xl cursor-pointer transition text-xs font-medium flex flex-col items-center space-y-1 text-slate-300";
+                }
+            });
+        }
+
+        window.applyFocusUpdate = async function() {
+            closeFocusModal();
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+            
+            if (db && auth && auth.currentUser && userProfile) {
+                userProfile.focusAreas = selectedFocusAreas;
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile', 'data'), userProfile);
+            }
+        }
+
+        window.changeWorkoutDuration = function(minutes) {
+            selectedDurationMin = parseInt(minutes, 10);
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+        }
+
+        window.resetTodayWorkout = function() {
+            Object.keys(exerciseProgress).forEach(id => {
+                exerciseProgress[id].completedSets = 0;
+                exerciseProgress[id].isCompleted = false;
+            });
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+        }
+
+        window.switchView = function(viewId) {
+            ['view-login', 'view-onboard', 'view-dashboard', 'view-calendar', 'view-nutrition', 'view-metrics', 'view-notes'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+
+            const nav = document.querySelector('nav');
+            const badge = document.getElementById('user-badge');
+            if (viewId === 'login' || viewId === 'onboard') {
+                nav.classList.add('hidden');
+                badge.classList.add('hidden');
+            } else {
+                nav.classList.remove('hidden');
+                badge.classList.add('hidden');
+                if (viewId === 'dashboard') {
+                    updateWorkoutDateHeader();
+                    buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+                }
+            }
+        }
+
+        function buildHybridRoutine(equipmentList, focusAreas, maxMinutes) {
+            const container = document.getElementById('routine-container');
+            if (!document.getElementById('exercise-list')) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span id="routine-tag" class="text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/20">Selected Date Sync</span>
+                            <h3 id="routine-title" class="font-bold text-base mt-1">Balanced Hypertrophy & Strength</h3>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="resetTodayWorkout()" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-2 py-1.5 rounded-lg border border-slate-700 transition" title="Restart Workout">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button onclick="openFocusModal()" class="text-xs text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 transition flex items-center space-x-1">
+                                <i class="fa-solid fa-bullseye"></i>
+                                <span>Focus</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TIME FRAME / DURATION SELECTOR -->
+                    <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                        <div class="flex items-center space-x-2 text-slate-300">
+                            <i class="fa-solid fa-clock text-emerald-400"></i>
+                            <span>Available Time:</span>
+                        </div>
+                        <select id="workout-duration-select" onchange="changeWorkoutDuration(this.value)" class="bg-slate-900 text-emerald-400 font-bold px-3 py-1 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500 text-xs">
+                            <option value="20">20 Mins (Express)</option>
+                            <option value="45" selected>45 Mins (Balanced)</option>
+                            <option value="60">60+ Mins (Full Hypertrophy)</option>
+                        </select>
+                    </div>
+
+                    <div id="exercise-list" class="space-y-3 pt-1"></div>
+                `;
+            }
+
+            const listEl = document.getElementById('exercise-list');
+            listEl.innerHTML = '';
+
+            // Check if the currently selected calendar date is a scheduled Rest Day
+            const todayType = scheduledWorkouts[selectedCalendarDate] || "Full Body Power";
+            
+            if (todayType.includes("Rest")) {
+                document.getElementById('routine-tag').innerText = `Rest Day (${selectedCalendarDate})`;
+                document.getElementById('routine-title').innerText = "Rest & Neuromuscular Recovery";
+                listEl.innerHTML = `
+                    <div class="bg-slate-950/80 p-5 rounded-xl border border-slate-800 text-center space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 text-xl">
+                            <i class="fa-solid fa-spa"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-slate-200">Scheduled Rest & Keto Recovery Day</h4>
+                        <p class="text-xs text-slate-400">No heavy resistance training scheduled for ${selectedCalendarDate}. Focus on light walking, stretching, hydration, and clean electrolyte replacement to maximize mTOR supercompensation.</p>
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs text-emerald-400 text-left space-y-1">
+                            <p class="font-bold">Recovery Protocol:</p>
+                            <p>• 1 gal water with pink Himalayan salt & magnesium</p>
+                            <p>• 15 mins dynamic hamstring & hip flexor mobility</p>
+                            <p>• High protein / moderate fat ketogenic meals</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            } else {
+                document.getElementById('routine-tag').innerText = todayType;
+            }
+
+            let routineItems = [];
+            
+            // Map split type to relevant exercise categories
+            let targetCategories = ["Chest", "Back", "Legs", "Shoulders", "Arms", "Core"];
+            if (todayType.includes("Chest")) targetCategories = ["Chest", "Arms"];
+            else if (todayType.includes("Back")) targetCategories = ["Back", "Arms"];
+            else if (todayType.includes("Leg")) targetCategories = ["Legs", "Core"];
+            else if (todayType.includes("Shoulders")) targetCategories = ["Shoulders", "Arms"];
+
+            targetCategories.forEach(cat => {
+                if (exerciseDatabase[cat]) {
+                    exerciseDatabase[cat].forEach(ex => {
+                        if (!ex.requiredEquipment || equipmentList.includes(ex.requiredEquipment)) {
+                            routineItems.push({ ...ex, isPriority: focusAreas.includes(cat) });
+                        }
+                    });
+                }
+            });
+
+            routineItems = Array.from(new Map(routineItems.map(item => [item.id, item])).values());
+
+            let limitCount = routineItems.length;
+            if (maxMinutes <= 20) limitCount = 2;
+            else if (maxMinutes <= 45) limitCount = 4;
+            else limitCount = routineItems.length;
+
+            const trimmedRoutine = routineItems.slice(0, limitCount);
+
+            trimmedRoutine.forEach((ex) => {
+                if (!exerciseProgress[ex.id]) {
+                    exerciseProgress[ex.id] = { completedSets: 0, currentWeight: ex.defaultWeight, week: 1, isCompleted: false };
+                }
+                const prog = exerciseProgress[ex.id];
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-3 exercise-card-item";
+                card.setAttribute('data-ex-id', ex.id);
+                
+                let btnHtml = `
+                    <button onclick="logSetClick('${ex.id}', ${ex.totalSets}, ${ex.rest}, '${ex.name}')" id="btn-log-${ex.id}" class="w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 py-2 rounded-lg text-xs font-semibold border border-emerald-500/30 transition flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Log Set & Start Rest Timer</span>
+                    </button>
+                `;
+
+                if (prog.isCompleted) {
+                    btnHtml = `
+                        <button disabled id="btn-log-${ex.id}" class="w-full bg-slate-800 text-slate-500 py-2 rounded-lg text-xs font-semibold border border-slate-700/50 cursor-not-allowed flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Completed</span>
+                        </button>
+                    `;
+                }
+
+                const warmupsHtml = ex.warmups && ex.warmups.length > 0 ? `
+                    <div class="bg-slate-950/40 px-2.5 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-400 flex items-center space-x-2">
+                        <span class="text-amber-400 font-bold uppercase text-[9px]">Warm-up:</span>
+                        <span>${ex.warmups.join(' • ')}</span>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="font-semibold text-sm text-slate-200">${ex.name}</h4>
+                                ${ex.isPriority ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Focus</span>' : ''}
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${ex.tags.map(t => `<span class="text-[9px] bg-slate-800 text-emerald-400 px-2 py-0.5 rounded-md font-medium border border-slate-700/60">${t}</span>`).join('')}
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">${ex.totalSets} Working Sets × ${ex.targetReps}</p>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <button onclick="openInstructionsModal('${ex.name}', '${ex.tags.join(', ')}', ${JSON.stringify(ex.instructions).replace(/"/g, '&quot;')})" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 p-2 rounded-lg text-xs border border-slate-700 transition" title="View Instructions">
+                                <i class="fa-solid fa-circle-info text-sm"></i>
+                            </button>
+                            <button onclick="openVideoModal('${ex.name}', '${ex.yt}')" class="bg-slate-800 hover:bg-slate-700 text-red-400 p-2 rounded-lg text-xs border border-slate-700 transition" title="Watch Video">
+                                <i class="fa-brands fa-youtube text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    ${warmupsHtml}
+
+                    <div class="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 flex items-center justify-between text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-slate-400">Target Weight:</span>
+                            <input type="number" id="weight-input-${ex.id}" value="${prog.currentWeight}" onchange="updateWeight('${ex.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-center text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+                            <span class="text-slate-500 text-[10px]">lbs (Wk ${prog.week})</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-slate-400">Sets Done:</span>
+                            <span id="set-count-${ex.id}" class="font-bold text-emerald-400">${prog.completedSets}/${ex.totalSets}</span>
+                        </div>
+                    </div>
+
+                    ${btnHtml}
+                `;
+                
+                if (prog.isCompleted) {
+                    listEl.appendChild(card);
+                } else {
+                    listEl.insertBefore(card, listEl.firstChild);
+                }
+            });
+
+            document.getElementById('routine-title').innerText = todayType;
+        }
+
+        window.openInstructionsModal = function(exName, tagsStr, instructionsArray) {
+            document.getElementById('anatomy-modal-title').innerText = exName;
+            document.getElementById('anatomy-target-desc').innerText = `Target Activation: ${tagsStr}`;
+            
+            const container = document.getElementById('exercise-instructions-text');
+            container.innerHTML = '';
+            
+            instructionsArray.forEach((step, index) => {
+                const p = document.createElement('div');
+                p.className = "flex items-start space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800";
+                p.innerHTML = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded text-[10px]">${index + 1}</span><span class="flex-1">${step}</span>`;
+                container.appendChild(p);
+            });
+
+            document.getElementById('anatomy-modal').classList.remove('hidden');
+        }
+
+        window.closeAnatomyModal = function() {
+            document.getElementById('anatomy-modal').classList.add('hidden');
+        }
+
+        window.updateWeight = function(exId, val) {
+            if (exerciseProgress[exId]) {
+                exerciseProgress[exId].currentWeight = parseFloat(val) || 0;
+            }
+        }
+
+        window.logSetClick = function(exId, totalSets, restSeconds, exName) {
+            activeModalEx = { id: exId, totalSets, restSeconds, exName };
+            currentAbleStatus = true;
+            document.getElementById('modal-set-notes').value = '';
+            setAbility(true);
+
+            triggerRestModal(restSeconds, exName);
+        }
+
+        window.setAbility = function(status) {
+            currentAbleStatus = status;
+            const yesBtn = document.getElementById('btn-able-yes');
+            const noBtn = document.getElementById('btn-able-no');
+            const easyBtn = document.getElementById('btn-able-easy');
+            
+            yesBtn.className = "bg-slate-800 border border-slate-700 text-slate-400 text-[11px] font-semibold py-2 rounded-lg transition";
+            noBtn.className = "bg-slate-800 border border-slate-700 text-slate-400 text-[11px] font-semibold py-2 rounded-lg transition";
+            easyBtn.className = "bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-semibold py-2 rounded-lg transition";
+
+            if (status === 'easy') {
+                easyBtn.className = "bg-teal-600/20 border border-teal-500 text-teal-300 text-[11px] font-semibold py-2 rounded-lg transition";
+            } else if (status === true) {
+                yesBtn.className = "bg-emerald-600/20 border border-emerald-500 text-emerald-400 text-[11px] font-semibold py-2 rounded-lg transition";
+            } else {
+                noBtn.className = "bg-red-500/20 border border-red-500 text-red-400 text-[11px] font-semibold py-2 rounded-lg transition";
+            }
+        }
+
+        function triggerRestModal(seconds, exerciseName) {
+            const modal = document.getElementById('rest-timer-modal');
+            const label = document.getElementById('timer-exercise-label');
+            
+            modal.classList.remove('hidden');
+            label.innerText = `${exerciseName} • Set Feedback & Cooldown`;
+            timeLeft = seconds;
+
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            updateTimerDisplay();
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const secs = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+        }
+
+        window.adjustTimer = function(amt) {
+            timeLeft += amt;
+            if (timeLeft < 0) timeLeft = 0;
+            updateTimerDisplay();
+        }
+
+        window.submitSetFeedback = async function() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            document.getElementById('rest-timer-modal').classList.add('hidden');
+
+            if (!activeModalEx) return;
+
+            const { id, totalSets, exName } = activeModalEx;
+            const notesText = document.getElementById('modal-set-notes').value.trim();
+            const prog = exerciseProgress[id];
+
+            let adjustmentNotice = "";
+            if (currentAbleStatus === 'easy') {
+                prog.currentWeight += 10;
+                adjustmentNotice = "🚀 Too Easy! AI increased weight by +10 lbs.";
+            } else if (currentAbleStatus === false) {
+                prog.currentWeight = Math.max(0, prog.currentWeight - 5);
+                adjustmentNotice = "⚠️ AI Adjusted: Reduced weight by 5 lbs for next set.";
+            } else {
+                prog.currentWeight += 5;
+                adjustmentNotice = "🎉 Good Set! AI increased weight by +5 lbs for the next set.";
+            }
+
+            if (prog.completedSets < totalSets) {
+                prog.completedSets++;
+            }
+
+            if (prog.completedSets >= totalSets) {
+                prog.isCompleted = true;
+            }
+
+            const countEl = document.getElementById(`set-count-${id}`);
+            if (countEl) countEl.innerText = `${prog.completedSets}/${totalSets}`;
+            const weightInputEl = document.getElementById(`weight-input-${id}`);
+            if (weightInputEl) weightInputEl.value = prog.currentWeight;
+
+            buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+            checkAllWorkoutsComplete();
+
+            const journalEntry = {
+                exercise: exName,
+                setNum: prog.completedSets,
+                weight: prog.currentWeight,
+                able: currentAbleStatus,
+                notes: notesText || "No notes provided.",
+                adjustment: adjustmentNotice,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                dateStr: new Date().toLocaleDateString()
+            };
+
+            personalJournal.unshift(journalEntry);
+            renderJournalArchive();
+
+            if (db && auth && auth.currentUser) {
+                try {
+                    const journalCol = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'journal');
+                    await addDoc(journalCol, journalEntry);
+                } catch (err) {
+                    console.error("Failed to save journal to cloud:", err);
+                }
+            }
+        }
+
+        function checkAllWorkoutsComplete() {
+            let allDone = true;
+            const cards = document.querySelectorAll('.exercise-card-item');
+            if (cards.length === 0) return;
+
+            cards.forEach(card => {
+                const exId = card.getAttribute('data-ex-id');
+                const prog = exerciseProgress[exId];
+                if (!prog || !prog.isCompleted) {
+                    allDone = false;
+                }
+            });
+
+            if (allDone) {
+                const container = document.getElementById('routine-container');
+                container.innerHTML = `
+                    <div class="text-center py-8 space-y-3">
+                        <div class="w-16 h-16 rounded-3xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto text-emerald-400 text-2xl shadow-xl animate-bounce">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Workout Complete for Today!</h3>
+                        <p class="text-xs text-slate-300 max-w-xs mx-auto italic">"Muscle isn't built in the gym; it's torn down there—and rebuilt through high-protein keto recovery and disciplined rest."</p>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-emerald-400 font-medium mt-2">
+                            🔥 mTOR protein synthesis activated! Enjoy your post-workout healthy fats & clean electrolytes.
+                        </div>
+                        <button onclick="resetTodayWorkout()" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-4 py-2 rounded-xl border border-slate-700 transition mt-2">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> Restart Workout
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderJournalArchive() {
+            const container = document.getElementById('journal-archive-list');
+            if (personalJournal.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-400 text-center py-8">
+                        <i class="fa-solid fa-book-open text-2xl text-slate-600 mb-2"></i>
+                        <p>No cloud journal notes found yet. Complete sets and record notes during your rest intervals!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            personalJournal.forEach(entry => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-1.5 text-xs";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between font-bold text-slate-200">
+                        <span>${entry.exercise}</span>
+                        <span class="text-emerald-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">Set ${entry.setNum} • ${entry.weight} lbs</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>${entry.dateStr || ''} ${entry.timestamp}</span>
+                        <span class="${entry.able === true ? 'text-emerald-400' : entry.able === 'easy' ? 'text-teal-400' : 'text-red-400'}">${entry.able === true ? '✓ Good Form' : entry.able === 'easy' ? '🚀 Too Easy' : '✗ Struggled'}</span>
+                    </div>
+                    <p class="text-slate-300 italic bg-slate-950/60 p-2 rounded-lg border border-slate-800/50">"${entry.notes}"</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.openVideoModal = function(title, embedUrl) {
+            document.getElementById('modal-video-title').innerText = title;
+            const iframe = document.getElementById('youtube-iframe');
+            const loading = document.getElementById('video-loading');
+            
+            iframe.classList.add('hidden');
+            loading.classList.remove('hidden');
+            document.getElementById('video-modal').classList.remove('hidden');
+
+            iframe.src = embedUrl + "?autoplay=1";
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                iframe.classList.remove('hidden');
+            }, 800);
+        }
+
+        window.closeVideoModal = function() {
+            const iframe = document.getElementById('youtube-iframe');
+            iframe.src = "";
+            document.getElementById('video-modal').classList.add('hidden');
+        }
+
+        function loadKetoMeals() {
+            const container = document.getElementById('keto-recipes-list');
+            container.innerHTML = '';
+
+            ketoRecipesDatabase.forEach(recipe => {
+                let macroDisplay = recipe.macros;
+                if (activeMacroGoal === 'lean') {
+                    macroDisplay = "50g Protein • 28g Healthy Fats • 3g Net Carbs";
+                } else if (activeMacroGoal === 'bulking') {
+                    macroDisplay = "55g Protein • 62g Healthy Fats • 5g Net Carbs";
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 cursor-pointer hover:border-emerald-500/50 transition";
+                card.onclick = () => openRecipeDetails(recipe.name);
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <h3 class="font-bold text-sm text-slate-100">${recipe.name}</h3>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/20">Recovery Meal</span>
+                    </div>
+                    <p class="text-xs text-emerald-400 font-medium">${macroDisplay}</p>
+                    <p class="text-xs text-slate-400">${recipe.desc}</p>
+                    <div class="text-[10px] text-slate-500 pt-1 flex items-center space-x-1">
+                        <i class="fa-solid fa-list-check text-emerald-400"></i>
+                        <span>Tap to view ingredients & shopping checklist</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.logout = function() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            document.getElementById('rest-timer-modal').classList.add('hidden');
+            switchView('login');
+        }
+    </script>
+</body>
+</html>
+```eof
