@@ -37,41 +37,16 @@
                     <p class="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">Science & Nutrition</p>
                 </div>
             </div>
-            <div id="user-badge" class="hidden flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 cursor-pointer hover:border-emerald-500 transition" onclick="openProfileModal()" title="Edit Profile & Stats">
+            <div id="user-badge" class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 cursor-pointer hover:border-emerald-500 transition" onclick="openProfileModal()" title="Edit Profile & Stats">
                 <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <span id="nav-username" class="text-xs font-medium text-slate-300">Athlete</span>
-                <button onclick="logout()" class="text-xs text-slate-400 hover:text-red-400 ml-1"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
         </header>
 
         <!-- MAIN CONTENT AREA -->
         <main class="flex-1 pb-24 overflow-y-auto">
 
-            <!-- 1. FACE DETECTION LOGIN SCREEN -->
-            <section id="view-login" class="p-6 flex flex-col items-center justify-center min-h-[75vh] text-center">
-                <div class="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-6 text-emerald-400 text-3xl shadow-xl shadow-emerald-500/5">
-                    <i class="fa-solid fa-face-viewfinder animate-pulse"></i>
-                </div>
-                <h2 class="text-2xl font-bold tracking-tight mb-2">Facial Recognition Login</h2>
-                <p class="text-sm text-slate-400 mb-8 max-w-xs">Secure biometric check-in to load your cloud profile & smart training calendar.</p>
-                
-                <div id="scanner-box" class="w-64 h-64 rounded-2xl bg-slate-900 border-2 border-dashed border-slate-700 relative overflow-hidden flex items-center justify-center mb-6">
-                    <div class="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex items-center justify-center">
-                        <i class="fa-solid fa-user-gear text-6xl text-slate-700"></i>
-                    </div>
-                    <div id="scan-laser" class="absolute inset-x-0 h-1 bg-emerald-500 shadow-[0_0_15px_#10b981] top-0 hidden"></div>
-                    <div id="scanner-status" class="absolute bottom-3 bg-slate-950/80 px-4 py-1.5 rounded-full text-xs font-medium text-slate-300 border border-slate-800">
-                        Camera Ready
-                    </div>
-                </div>
-
-                <button onclick="startFaceScan()" id="scan-btn" class="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-camera"></i>
-                    <span>Scan Face & Login</span>
-                </button>
-            </section>
-
-            <!-- 2. PROFILE SETUP & STARTING WEIGHT WIZARD (Onboarding) -->
+            <!-- 1. PROFILE SETUP & STARTING WEIGHT WIZARD (Onboarding) -->
             <section id="view-onboard" class="p-5 hidden">
                 <div class="mb-5">
                     <h2 class="text-xl font-bold">Configure Your Training Profile</h2>
@@ -206,8 +181,8 @@
                 </form>
             </section>
 
-            <!-- 3. MAIN DASHBOARD / WORKOUT ROUTINE -->
-            <section id="view-dashboard" class="p-5 hidden space-y-4">
+            <!-- 2. MAIN DASHBOARD / WORKOUT ROUTINE -->
+            <section id="view-dashboard" class="p-5 space-y-4">
                 
                 <!-- WORKOUT DATE NAVIGATION HEADER -->
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between text-xs shadow-lg">
@@ -260,7 +235,7 @@
                 </div>
             </section>
 
-            <!-- 4. SMART AI CALENDAR WITH MONTH NAVIGATION -->
+            <!-- 3. SMART AI CALENDAR WITH MONTH NAVIGATION -->
             <section id="view-calendar" class="p-5 hidden space-y-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -315,7 +290,7 @@
                 </div>
             </section>
 
-            <!-- 5. KETO NUTRITION & POST-WORKOUT MEALS -->
+            <!-- 4. KETO NUTRITION & POST-WORKOUT MEALS -->
             <section id="view-nutrition" class="p-5 hidden space-y-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -344,7 +319,7 @@
                 </div>
             </section>
 
-            <!-- 6. BODY METRICS & MEASUREMENTS -->
+            <!-- 5. BODY METRICS & MEASUREMENTS -->
             <section id="view-metrics" class="p-5 hidden space-y-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -365,7 +340,7 @@
                 </div>
             </section>
 
-            <!-- 7. PERSONAL TRAINING JOURNAL & NOTES ARCHIVE -->
+            <!-- 6. PERSONAL TRAINING JOURNAL & NOTES ARCHIVE -->
             <section id="view-notes" class="p-5 hidden space-y-4">
                 <div>
                     <h2 class="text-xl font-bold">Personal Training Journal</h2>
@@ -788,6 +763,9 @@
                     if (userProfile.exerciseProgress) {
                         exerciseProgress = userProfile.exerciseProgress;
                     }
+                    switchView('dashboard');
+                } else {
+                    switchView('onboard');
                 }
 
                 const journalCol = collection(db, 'artifacts', appId, 'users', uid, 'journal');
@@ -827,56 +805,8 @@
                 generateDefaultPeriodizedSchedule();
                 updateWorkoutDateHeader();
                 buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
+                switchView('dashboard');
             }
-        }
-
-        window.startFaceScan = async function() {
-            const laser = document.getElementById('scan-laser');
-            const status = document.getElementById('scanner-status');
-            const btn = document.getElementById('scan-btn');
-
-            laser.classList.remove('hidden');
-            laser.style.animation = 'none';
-            laser.offsetHeight;
-            laser.style.animation = 'scanMotion 1.5s ease-in-out infinite alternate';
-            
-            status.innerText = "Analyzing Facial Geometry...";
-            btn.disabled = true;
-            btn.classList.add('opacity-50');
-
-            const styleSheet = document.createElement("style");
-            styleSheet.innerText = `@keyframes scanMotion { 0% { top: 0%; } 100% { top: 95%; } }`;
-            document.head.appendChild(styleSheet);
-
-            // Actively check Firestore in case auth data is still syncing
-            if (db && auth && auth.currentUser) {
-                try {
-                    const profileRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile', 'data');
-                    const profileSnap = await getDoc(profileRef);
-                    if (profileSnap.exists()) {
-                        userProfile = profileSnap.data();
-                    }
-                } catch(err) {
-                    console.error("Scan lookup error:", err);
-                }
-            }
-
-            setTimeout(async () => {
-                status.innerText = "Match Verified: Welcome Back!";
-                status.classList.add('text-emerald-400', 'border-emerald-500/50');
-                
-                setTimeout(() => {
-                    if (userProfile && userProfile.name) {
-                        document.getElementById('nav-username').innerText = userProfile.name;
-                        updateWorkoutDateHeader();
-                        buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
-                        loadKetoMeals();
-                        switchView('dashboard');
-                    } else {
-                        switchView('onboard');
-                    }
-                }, 800);
-            }, 1800);
         }
 
         window.setEvalMode = function(mode) {
@@ -1643,19 +1573,16 @@
         }
 
         window.switchView = function(viewId) {
-            ['view-login', 'view-onboard', 'view-dashboard', 'view-calendar', 'view-nutrition', 'view-metrics', 'view-notes'].forEach(id => {
+            ['view-onboard', 'view-dashboard', 'view-calendar', 'view-nutrition', 'view-metrics', 'view-notes'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById('view-' + viewId).classList.remove('hidden');
 
             const nav = document.querySelector('nav');
-            const badge = document.getElementById('user-badge');
-            if (viewId === 'login' || viewId === 'onboard') {
+            if (viewId === 'onboard') {
                 nav.classList.add('hidden');
-                badge.classList.add('hidden');
             } else {
                 nav.classList.remove('hidden');
-                badge.classList.add('hidden');
                 if (viewId === 'dashboard') {
                     updateWorkoutDateHeader();
                     buildHybridRoutine(userEquipment, selectedFocusAreas, selectedDurationMin);
@@ -2101,12 +2028,6 @@
                 `;
                 container.appendChild(card);
             });
-        }
-
-        window.logout = function() {
-            if (countdownTimer) clearInterval(countdownTimer);
-            document.getElementById('rest-timer-modal').classList.add('hidden');
-            switchView('login');
         }
     </script>
 </body>
